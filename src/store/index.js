@@ -1,31 +1,48 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { persistStore, persistReducer, FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER } from "redux-persist";
+import { 
+  persistStore, 
+  persistReducer,
+  FLUSH,
+  REHYDRATE,
+  PAUSE,
+  PERSIST,
+  PURGE,
+  REGISTER
+} from "redux-persist";
 import storage from "redux-persist/lib/storage";
+import todoReducer from "./reducers/todoSlice";
+import authReducer from "./reducers/authSlice"; 
 
-// Empty root reducer for now
-const rootReducer = (state = {}, action) => state;
-
-// Persist config
-const persistConfig = {
-  key: "root",
+const todoPersistConfig = {
+  key: 'todos',
   storage,
+  whitelist: ['items'] 
 };
 
-// Persisted reducer
-const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-// Create store
+const authPersistConfig = {
+  key: 'auth',
+  storage,
+  whitelist: ['user'] 
+};
+
+const rootReducer = {
+  todos: persistReducer(todoPersistConfig, todoReducer),
+  auth: persistReducer(authPersistConfig, authReducer),
+  // other reducers...
+};
+
 const store = configureStore({
-  reducer: persistedReducer,
+  reducer: rootReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
         ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
     }),
+  devTools: process.env.NODE_ENV !== 'production',
 });
 
-// Create persistor
 const persistor = persistStore(store);
 
 export { store, persistor };
