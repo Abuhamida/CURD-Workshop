@@ -30,11 +30,14 @@ const router = createBrowserRouter([
       {
         index: true,
         element: (
-          <Suspense fallback={<LoadingSpinner />}>
-            <Home />
-          </Suspense>
+          <ProtectedRoute>
+            <Suspense fallback={<LoadingSpinner />}>
+              <Home />
+            </Suspense>
+          </ProtectedRoute>
         ),
       },
+
       {
         path: "dashboard",
         element: (
