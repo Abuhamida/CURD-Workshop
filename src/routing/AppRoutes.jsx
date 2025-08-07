@@ -10,6 +10,7 @@ const Dashboard = lazy(() => import("../pages/Dashboard/Dashboard"));
 const Login = lazy(() => import("../pages/Login/Login"));
 const Error = lazy(() => import("../pages/Error/Error"));
 const Signup = lazy(() => import("../pages/Signup/Signup"));
+const Profile = lazy(() => import("../pages/Profile/Profile"));
 
 const LoadingSpinner = () => <p>Loading...</p>;
 
@@ -44,6 +45,16 @@ const router = createBrowserRouter([
           <ProtectedRoute>
             <Suspense fallback={<LoadingSpinner />}>
               <Dashboard />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile",
+        element: (
+          <ProtectedRoute>
+            <Suspense fallback={<LoadingSpinner />}>
+              <Profile />
             </Suspense>
           </ProtectedRoute>
         ),
