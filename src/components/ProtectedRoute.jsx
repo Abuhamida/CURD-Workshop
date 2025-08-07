@@ -21,14 +21,20 @@ export default function ProtectedRoute({ children, type = "protected" }) {
     };
   }, []);
 
-  if (loading) return <p>جارٍ التحقق...</p>;
-  
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-12 h-12 border-4 border-blue-500 border-dashed rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   if (type === "protected") {
-    // For protected routes - redirect to login if no session
     if (!session) return <Navigate to="/login" />;
     return children;
-  } else if (type === "auth") {
-    // For auth routes (login/signup) - redirect away if session exists
+  }
+
+  if (type === "auth") {
     if (session) return <Navigate to="/" />;
     return children;
   }
