@@ -12,6 +12,7 @@ import {
 import storage from "redux-persist/lib/storage";
 import todoReducer from "./reducers/todoSlice";
 import authReducer from "./reducers/authSlice"; 
+import taskReducer from "./reducers/taskSlice"; 
 
 const todoPersistConfig = {
   key: 'todos',
@@ -26,9 +27,16 @@ const authPersistConfig = {
   whitelist: ['user'] 
 };
 
+const taskPersistConfig = {
+  key: 'tasks',
+  storage,
+  whitelist: ['items']
+};
+
 const rootReducer = {
   todos: persistReducer(todoPersistConfig, todoReducer),
   auth: persistReducer(authPersistConfig, authReducer),
+  tasks: persistReducer(taskPersistConfig, taskReducer),
   // other reducers...
 };
 
