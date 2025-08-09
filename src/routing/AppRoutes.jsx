@@ -11,6 +11,7 @@ const Login = lazy(() => import("../pages/Login/Login"));
 const Error = lazy(() => import("../pages/Error/Error"));
 const Signup = lazy(() => import("../pages/Signup/Signup"));
 const Profile = lazy(() => import("../pages/Profile/Profile"));
+const Todo = lazy(() => import("../pages/Todo/Todo"));
 
 const LoadingSpinner = () => <p>Loading...</p>;
 
@@ -31,11 +32,9 @@ const router = createBrowserRouter([
       {
         index: true,
         element: (
-          <ProtectedRoute>
             <Suspense fallback={<LoadingSpinner />}>
               <Home />
             </Suspense>
-          </ProtectedRoute>
         ),
       },
 
@@ -45,6 +44,16 @@ const router = createBrowserRouter([
           <ProtectedRoute>
             <Suspense fallback={<LoadingSpinner />}>
               <Dashboard />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "todos",
+        element: (
+          <ProtectedRoute>
+            <Suspense fallback={<LoadingSpinner />}>
+              <Todo />
             </Suspense>
           </ProtectedRoute>
         ),

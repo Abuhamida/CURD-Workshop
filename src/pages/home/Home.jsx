@@ -1,358 +1,105 @@
-import { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import Swal from "sweetalert2";
-import {
-  fetchTodos,
-  createTodo,
-  removeTodo,
-  editTodo,
-} from "../../store/reducers/todoSlice";
+// src/pages/Home.jsx
+import React from "react";
+import { Link } from "react-router-dom";
+import { CheckCircle, Clock, Layers, Zap } from "lucide-react";
 
-import { supabase } from "../../lib/supabase";
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-} from "react-beautiful-dnd";
-
-const STATUSES = ["todo", "in_progress", "review", "done"];
-const STATUS_LABELS = {
-  todo: "To Do",
-  in_progress: "In Progress",
-  review: "Review",
-  done: "Done",
-};
-
-const Home = () => {
-  const dispatch = useDispatch();
-  const todos = useSelector((state) => state.todos.items);
-  const [userId, setUserId] = useState(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalStatus, setModalStatus] = useState(null);
-  const [editMode, setEditMode] = useState(false);
-  const [editingId, setEditingId] = useState(null);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    due_date: "",
-  });
-
-  const [searchTask, setSearchTask] = useState("");
-
-  const filteredTodos = todos.filter((todo) =>
-    todo.title.toLowerCase().includes(searchTask.toLowerCase())
-  );
-
-
-  useEffect(() => {
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setUserId(user.id);
-        dispatch(fetchTodos(user.id));
-      }
-    };
-    getUser();
-  }, [dispatch]);
-
-  const openModal = (status, todo = null) => {
-    setModalStatus(status);
-    setIsModalOpen(true);
-    if (todo) {
-      setEditMode(true);
-      setEditingId(todo.id);
-      setFormData({
-        title: todo.title,
-        description: todo.description,
-        due_date: todo.due_date,
-      });
-    } else {
-      setEditMode(false);
-      setFormData({ title: "", description: "", due_date: "" });
-    }
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setFormData({ title: "", description: "", due_date: "" });
-    setEditMode(false);
-    setEditingId(null);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!userId) return;
-
-    if (editMode) {
-      await dispatch(editTodo({ id: editingId, updates: formData }));
-      Swal.fire("Updated!", "The todo has been updated successfully.", "success");
-    } else {
-      await dispatch(
-        createTodo({
-          todo: { ...formData, status: modalStatus, user_id: userId },
-          userId,
-        })
-      );
-      Swal.fire("Added!", "The todo has been added successfully.", "success");
-    }
-
-    closeModal();
-  };
-
-  const handleDelete = async (id) => {
-    Swal.fire({
-      title: "Are you sure?",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3085d6",
-      cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it",
-      cancelButtonText: "Cancel",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        await dispatch(removeTodo(id));
-        Swal.fire("Deleted!", "The item has been deleted successfully.", "success");
-      }
-    });
-  };
-
-  const handleDragEnd = async (result) => {
-    const { destination, source, draggableId } = result;
-    if (!destination) return;
-
-    const sourceStatus = source.droppableId;
-    const destStatus = destination.droppableId;
-
-    if (sourceStatus === destStatus) return;
-
-    await dispatch(
-      editTodo({
-        id: draggableId,
-        updates: { status: destStatus },
-      })
-    );
-  };
-
-  const columnColors = [
-    "bg-blue-800",
-    "bg-indigo-800",
-    "bg-purple-800",
-    "bg-pink-800",
-  ];
-
+export default function Home() {
   return (
-    <div className="min-h-screen py-6 bg-gray-900">
-      {/* Header */}
-      <div className="container flex flex-col items-center justify-between gap-4 px-6 mx-auto mb-6 md:flex-row">
-        <input
-          type="text"
-          placeholder="Search your task"
-          value={searchTask}
-          onChange={(e) => setSearchTask(e.target.value)}
-          className="w-full px-4 py-2 text-gray-800 bg-gray-700 md:w-3/4 rounded-xl placeholder:text-gray-500"
-        />
-        <button
-          onClick={() => openModal("todo")}
-          className="w-full px-5 py-2 text-white transition bg-blue-800 rounded md:w-auto hover:bg-blue-700"
-        >
-          + Create Task
-        </button>
-      </div>
-
-      {searchTask ? (
-        <div className="container flex flex-col gap-4 mx-auto mt-4 text-white">
-          {filteredTodos.length > 0 ? (
-            filteredTodos.map((todo) => (
-              <div
-                key={todo.id}
-                className="p-4 mb-4 text-gray-900 bg-gray-100 rounded-lg shadow-md"
-              >
-                <strong className="block text-lg font-semibold text-blue-900">
-                  {todo.title}
-                </strong>
-                <p className="mt-1 text-sm text-gray-700">{todo.description}</p>
-                <small className="block mt-1 text-xs text-gray-500">
-                  Due: {todo.due_date}
-                </small>
-                <div className="flex gap-3 mt-3">
-                  <button
-                    onClick={() => openModal(todo.status, todo)}
-                    className="px-3 py-1 text-sm text-white bg-blue-800 rounded hover:bg-blue-700"
-                  >
-                    ✏️ Edit
-                  </button>
-                  <button
-                    onClick={() => handleDelete(todo.id)}
-                    className="px-3 py-1 text-sm text-white bg-red-800 rounded hover:bg-red-700"
-                  >
-                    🗑️ Delete
-                  </button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="mt-4 text-center text-gray-400">No tasks found.</p>
-          )}
-        </div>
-      ) : (
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="container mx-auto text-white grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {STATUSES.map((status, index) => (
-              <Droppable droppableId={status} key={status}>
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className={`flex-1 p-4 rounded-xl ${columnColors[index]} shadow-lg min-h-[300px]`}
-                  >
-                    {/* Column header */}
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-lg font-bold">{STATUS_LABELS[status]}</h4>
-                      <button
-                        onClick={() => openModal(status)}
-                        className="px-4 py-2 font-medium text-blue-900 transition bg-white rounded hover:bg-gray-200"
-                      >
-                        + Add Task
-                      </button>
-                    </div>
-
-                    {/* Tasks */}
-                    {todos
-                      .filter((todo) => todo.status === status)
-                      .map((todo, i) => (
-                        <Draggable
-                          draggableId={todo.id.toString()}
-                          index={i}
-                          key={todo.id}
-                        >
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="p-4 mb-4 text-gray-900 bg-gray-100 rounded-lg shadow-md"
-                            >
-                              <strong className="block text-lg font-semibold text-blue-900">
-                                {todo.title}
-                              </strong>
-                              <p className="mt-1 text-sm text-gray-700">
-                                {todo.description}
-                              </p>
-                              <small className="block mt-1 text-xs text-gray-500">
-                                Due: {todo.due_date}
-                              </small>
-                              <div className="flex gap-3 mt-3">
-                                <button
-                                  onClick={() => openModal(status, todo)}
-                                  className="px-3 py-1 text-sm text-white bg-blue-800 rounded hover:bg-blue-700"
-                                >
-                                  ✏️ Edit
-                                </button>
-                                <button
-                                  onClick={() => handleDelete(todo.id)}
-                                  className="px-3 py-1 text-sm text-white bg-red-800 rounded hover:bg-red-700"
-                                >
-                                  🗑️ Delete
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                    {provided.placeholder}
-                  </div>
-                )}
-              </Droppable>
-            ))}
-          </div>
-        </DragDropContext>
-      )}
-
-
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="relative w-11/12 max-w-md p-6 text-white bg-gray-800 shadow-lg rounded-xl">
-            <button
-              onClick={closeModal}
-              className="absolute text-gray-300 top-2 right-3 hover:text-white"
+    <div className="bg-white text-gray-900 min-h-screen flex flex-col">
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white">
+        <div className="max-w-6xl mx-auto px-6 py-20 md:py-28 text-center">
+          <h1 className="text-4xl md:text-6xl font-bold leading-tight">
+            Organize Your Tasks.  
+            <span className="block text-indigo-200">Boost Your Productivity.</span>
+          </h1>
+          <p className="mt-6 text-lg md:text-xl max-w-2xl mx-auto text-indigo-100">
+            TaskFlow helps you manage work, track progress, and hit deadlines —
+            all in one streamlined platform.
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              to="/todos"
+              className="bg-white text-indigo-700 font-semibold px-6 py-3 rounded-lg shadow hover:bg-gray-100 transition"
             >
-              ✖
-            </button>
-            <h4 className="mb-4 text-xl font-semibold text-white">
-              {editMode ? "Edit Task" : "Add New Task"}
-            </h4>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-              <input
-                placeholder="Title"
-                value={formData.title}
-                onChange={(e) =>
-                  setFormData({ ...formData, title: e.target.value })
-                }
-                required
-                className="p-2 text-white bg-gray-700 rounded placeholder:text-gray-300"
-              />
-              <input
-                placeholder="Description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
-                required
-                className="p-2 text-white bg-gray-700 rounded placeholder:text-gray-300"
-              />
-              <input
-                type="date"
-                value={formData.due_date}
-                onChange={(e) =>
-                  setFormData({ ...formData, due_date: e.target.value })
-                }
-                className="p-2 text-white bg-gray-700 rounded"
-              />
-              {/* 
-              <select
-                value={formData.category_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, category_id: e.target.value })
-                }
-                required
-                className="p-2 text-white bg-gray-700 rounded"
-              >
-                <option value="">Select Category</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>{cat.name}</option>
-                ))}
-              </select>
-
-              <select
-                value={formData.priority_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, priority_id: e.target.value })
-                }
-                required
-                className="p-2 text-white bg-gray-700 rounded"
-              >
-                <option value="">Select Priority</option>
-                {priorities.map((p) => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select> */}
-
-              <button
-                type="submit"
-                className="py-2 mt-2 text-white transition bg-blue-800 rounded hover:bg-blue-700"
-              >
-                {editMode ? "Update" : "Add"}
-              </button>
-            </form>
+              Get Started
+            </Link>
+            <Link
+              to="/dashboard"
+              className="bg-indigo-500 text-white font-semibold px-6 py-3 rounded-lg shadow hover:bg-indigo-400 transition"
+            >
+              View Dashboard
+            </Link>
           </div>
         </div>
-      )}
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-6 bg-gray-50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-800">
+            Why Choose TaskFlow?
+          </h2>
+          <p className="text-center text-gray-500 mt-3 max-w-2xl mx-auto">
+            Designed to make task management simple, fast, and effective for teams and individuals.
+          </p>
+          <div className="grid md:grid-cols-3 gap-8 mt-12">
+            <FeatureCard
+              icon={<Layers className="text-indigo-600" size={36} />}
+              title="Organized Workflow"
+              description="Categorize and prioritize tasks to keep everything in order."
+            />
+            <FeatureCard
+              icon={<Clock className="text-indigo-600" size={36} />}
+              title="Deadline Management"
+              description="Stay ahead with due dates, reminders, and progress tracking."
+            />
+            <FeatureCard
+              icon={<Zap className="text-indigo-600" size={36} />}
+              title="Fast & Responsive"
+              description="Enjoy a smooth experience on any device, anywhere."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section className="py-20 px-6 bg-white border-t border-gray-100">
+        <div className="max-w-5xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-gray-800">About TaskFlow</h2>
+          <p className="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
+            TaskFlow is a modern task management solution that helps you organize your work,
+            streamline collaboration, and deliver projects on time. Whether you're a solo professional
+            or part of a large team, TaskFlow adapts to your workflow.
+          </p>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="bg-indigo-600 text-white py-16 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold">Start Managing Your Tasks Today</h2>
+          <p className="mt-4 text-lg text-indigo-100">
+            Join TaskFlow and experience stress-free task management.
+          </p>
+          <Link
+            to="/todos"
+            className="inline-flex items-center mt-6 bg-white text-indigo-700 font-semibold px-6 py-3 rounded-lg shadow hover:bg-gray-100 transition"
+          >
+            Get Started Now
+          </Link>
+        </div>
+      </section>
     </div>
-
   );
-};
+}
 
-export default Home;
+function FeatureCard({ icon, title, description }) {
+  return (
+    <div className="bg-white rounded-xl shadow-md p-6 text-center hover:shadow-lg transition">
+      <div className="flex justify-center mb-4">{icon}</div>
+      <h3 className="text-lg font-semibold mb-2">{title}</h3>
+      <p className="text-gray-500">{description}</p>
+    </div>
+  );
+}
