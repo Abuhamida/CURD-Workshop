@@ -6,6 +6,8 @@ import {
   createTodo,
   removeTodo,
   editTodo,
+  fetchCategories,
+  fetchPriorities,
 } from "../../store/reducers/todoSlice";
 
 import { supabase } from "../../lib/supabase";
@@ -26,15 +28,23 @@ const STATUS_LABELS = {
 const Todo = () => {
   const dispatch = useDispatch();
   const todos = useSelector((state) => state.todos.items);
+  const categories = useSelector((state) => state.todos.categories);
+  const priorities = useSelector((state) => state.todos.priorities);
+
+  console.log(categories)
+
   const [userId, setUserId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalStatus, setModalStatus] = useState(null);
   const [editMode, setEditMode] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     due_date: "",
+    category_id: "",
+    priority_id: "",
   });
 
   const [searchTask, setSearchTask] = useState("");
@@ -55,6 +65,9 @@ const Todo = () => {
     };
 
     getUser();
+
+    dispatch(fetchCategories());
+    dispatch(fetchPriorities());
 
     // Listen for auth changes to refresh todos
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -83,16 +96,18 @@ const Todo = () => {
         title: todo.title,
         description: todo.description,
         due_date: todo.due_date,
+        category_id: todo.category_id,
+        priority_id: todo.priority_id,
       });
     } else {
       setEditMode(false);
-      setFormData({ title: "", description: "", due_date: "" });
+      setFormData({ title: "", description: "", due_date: "", category_id: "", priority_id: "" });
     }
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setFormData({ title: "", description: "", due_date: "" });
+    setFormData({ title: "", description: "", due_date: "", category_id: "", priority_id: "" });
     setEditMode(false);
     setEditingId(null);
   };
@@ -105,6 +120,23 @@ const Todo = () => {
       Swal.fire("Error", "Please fill in all required fields.", "error");
       return;
     }
+
+    if (formData.title.trim().length < 3 || formData.title.trim().length > 10) {
+      Swal.fire("Error", "Title must be between 3 and 10 characters.", "error");
+      return;
+    }
+
+    if (formData.description.trim().length < 10 || formData.description.trim().length > 20) {
+      Swal.fire("Error", "Description must be between 10 and 100 characters.", "error");
+      return;
+    }
+
+    if (!formData.category_id || !formData.priority_id) {
+      Swal.fire("Error", "Please select category and priority.", "error");
+      return;
+    }
+
+    setLoading(true);
 
     if (editMode) {
       await dispatch(editTodo({ id: editingId, updates: formData }));
@@ -120,6 +152,7 @@ const Todo = () => {
     }
 
     closeModal();
+    setLoading(false);
   };
 
   const handleDelete = async (id) => {
@@ -173,6 +206,34 @@ const Todo = () => {
     "bg-pink-800",
   ];
 
+  const getPriorityColor = (priorityName) => {
+    switch (priorityName?.toLowerCase()) {
+      case "high":
+        return "bg-red-600 text-white";
+      case "medium":
+        return "bg-yellow-500 text-black";
+      case "low":
+        return "bg-green-600 text-white";
+      default:
+        return "bg-gray-500 text-white";
+    }
+  };
+
+  const getCategoryColor = (categoryName) => {
+    switch (categoryName?.toLowerCase()) {
+      case "astronaut training":
+        return "bg-blue-600 text-white";
+      case "launch operations":
+        return "bg-orange-500 text-white";
+      case "mission control":
+        return "bg-purple-600 text-white";
+      case "mission planning":
+        return "bg-green-600 text-white";
+      default:
+        return "bg-gray-500 text-white";
+    }
+  };
+
   return (
     <div className="min-h-screen py-6 bg-gray-900">
       {/* Header */}
@@ -182,7 +243,7 @@ const Todo = () => {
           placeholder="Search your task"
           value={searchTask}
           onChange={(e) => setSearchTask(e.target.value)}
-          className="w-full px-4 py-2 text-gray-800 bg-gray-700 md:w-3/4 rounded-xl placeholder:text-gray-500"
+          className="w-full px-4 py-2 text-white bg-gray-700 md:w-3/4 rounded-xl placeholder:text-gray-500"
         />
         <button
           onClick={() => openModal("todo")}
@@ -198,12 +259,26 @@ const Todo = () => {
             filteredTodos.map((todo) => (
               <div
                 key={todo.id}
-                className="p-4 mb-4 text-gray-900 bg-gray-100 rounded-lg shadow-md"
+                className=" w-full md:w-fit p-4 mb-4 text-gray-900 bg-gray-100 rounded-lg shadow-md"
               >
-                <strong className="block text-lg font-semibold text-blue-900">
-                  {todo.title}
-                </strong>
-                <p className="mt-1 text-sm text-gray-700">{todo.description}</p>
+                <div className=" flex items-center justify-between">
+                  <span className="text-lg font-bold text-blue-800">{todo.title}</span>
+                  <span
+                    className={`px-3 py-1 text-xs rounded-full ${getPriorityColor(todo.priorities?.name)}`}
+                  >
+                    {todo.priorities?.name}
+                  </span>
+                </div>
+                <p className="mt-1  text-gray-700">
+                  {todo.description}
+                </p>
+                <div className="my-2 text-sm text-gray-500 flex gap-4">
+                  <span
+                    className={`px-3 py-1 text-xs rounded-full ${getCategoryColor(todo.categories?.name)}`}
+                  >
+                    {todo.categories?.name}
+                  </span>
+                </div>
                 <small className="block mt-1 text-xs text-gray-500">
                   Due: {todo.due_date ? new Date(todo.due_date).toLocaleDateString() : "No date"}
                 </small>
@@ -240,13 +315,7 @@ const Todo = () => {
                   >
                     {/* Column header */}
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-lg font-bold">{STATUS_LABELS[status]}</h4>
-                      <button
-                        onClick={() => openModal(status)}
-                        className="px-4 py-2 font-medium text-blue-900 transition bg-white rounded hover:bg-gray-200"
-                      >
-                        + Add Task
-                      </button>
+                      <h4 className="text-lg font-bold">{STATUS_LABELS[status]} </h4>
                     </div>
 
                     {/* Tasks */}
@@ -265,12 +334,24 @@ const Todo = () => {
                               {...provided.dragHandleProps}
                               className="p-4 mb-4 text-gray-900 bg-gray-100 rounded-lg shadow-md"
                             >
-                              <strong className="block text-lg font-semibold text-blue-900">
-                                {todo.title}
-                              </strong>
-                              <p className="mt-1 text-sm text-gray-700">
+                              <div className=" flex items-center justify-between">
+                                <span className="text-lg font-bold text-blue-800">{todo.title}</span>
+                                <span
+                                  className={`px-3 py-1 text-xs rounded-full ${getPriorityColor(todo.priorities?.name)}`}
+                                >
+                                  {todo.priorities?.name}
+                                </span>
+                              </div>
+                              <p className="mt-1  text-gray-700">
                                 {todo.description}
                               </p>
+                              <div className="my-2 text-sm text-gray-500 flex gap-4">
+                                <span
+                                  className={`px-3 py-1 text-xs rounded-full ${getCategoryColor(todo.categories?.name)}`}
+                                >
+                                  {todo.categories?.name}
+                                </span>
+                              </div>
                               <small className="block mt-1 text-xs text-gray-500">
                                 Due: {todo.due_date ? new Date(todo.due_date).toLocaleDateString() : "No date"}
                               </small>
@@ -333,6 +414,7 @@ const Todo = () => {
                 required
                 className="p-2 text-white bg-gray-700 rounded placeholder:text-gray-300"
               />
+
               <input
                 type="date"
                 value={formData.due_date}
@@ -341,11 +423,46 @@ const Todo = () => {
                 }
                 className="p-2 text-white bg-gray-700 rounded"
               />
+
+              <select
+                value={formData.category_id}
+                onChange={(e) =>
+                  setFormData({ ...formData, category_id: e.target.value })
+                }
+                className="p-2 text-white bg-gray-700 rounded"
+                required
+              >
+                <option value="">Select Category</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={formData.priority_id}
+                onChange={(e) =>
+                  setFormData({ ...formData, priority_id: e.target.value })
+                }
+                className="p-2 text-white bg-gray-700 rounded"
+                required
+              >
+                <option value="">Select Priority</option>
+                {priorities.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+
               <button
                 type="submit"
                 className="py-2 mt-2 text-white transition bg-blue-800 rounded hover:bg-blue-700"
               >
-                {editMode ? "Update" : "Add"}
+                {loading ? "Loading..." : (
+                  editMode ? "Update" : "Add"
+                )}
               </button>
             </form>
           </div>
