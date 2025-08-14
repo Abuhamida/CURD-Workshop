@@ -82,7 +82,7 @@ export default function Profile() {
   if (loading && !user.id) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#193cb8]"></div>
       </div>
     );
   }
@@ -105,7 +105,7 @@ export default function Profile() {
                   className="rounded-full w-24 h-24 md:w-32 md:h-32 object-cover border-4 border-white shadow"
                 />
                 {isEditing && (
-                  <button className="absolute bottom-0 right-0 bg-green-600 hover:bg-green-700 text-white p-2 rounded-full shadow-md">
+                  <button className="absolute bottom-0 right-0 bg-[#193cb8] hover:bg-[#193cb8] text-white p-2 rounded-full shadow-md">
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-4 w-4"
@@ -140,7 +140,7 @@ export default function Profile() {
             <nav className="space-y-3">
               <a
                 href="#"
-                className="flex items-center gap-3 p-3 rounded-lg bg-green-50 text-green-700 font-medium"
+                className="flex items-center gap-3 p-3 rounded-lg bg-green-50 text-[#193cb8] font-medium"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -220,7 +220,7 @@ export default function Profile() {
                 {!isEditing ? (
                   <button
                     onClick={handleEdit}
-                    className="flex items-center gap-2 text-green-600 hover:text-green-700 font-medium"
+                    className="flex items-center gap-2 text-[#193cb8] hover:text-[#193cb8] font-medium"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -276,7 +276,7 @@ export default function Profile() {
                         name="full_name"
                         value={user.full_name}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#193cb8] focus:border-[#193cb8]"
                       />
                     ) : (
                       <p className="px-4 py-2 text-gray-800">{user.full_name}</p>
@@ -296,7 +296,7 @@ export default function Profile() {
                         name="phone"
                         value={user.phone}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#193cb8] focus:border-[#193cb8]"
                       />
                     ) : (
                       <p className="px-4 py-2 text-gray-800">{user.phone}</p>
@@ -316,7 +316,7 @@ export default function Profile() {
                         value={user.address}
                         onChange={handleChange}
                         rows="2"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#193cb8] focus:border-[#193cb8]"
                       />
                     ) : (
                       <p className="px-4 py-2 text-gray-800">{user.address}</p>
@@ -354,7 +354,7 @@ export default function Profile() {
                     </button>
                     <button
                       type="submit"
-                      className="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-medium text-white disabled:opacity-50"
+                      className="px-6 py-2 bg-[#193cb8] hover:bg-[#193cb8] rounded-lg font-medium text-white disabled:opacity-50"
                       disabled={loading}
                     >
                       {loading ? (
